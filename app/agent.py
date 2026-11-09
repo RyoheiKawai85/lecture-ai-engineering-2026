@@ -32,17 +32,24 @@ INSTRUCTIONS = """\
 あなたはAIエンジニアリング講座（AIE2026）の学習支援エージェントです。
 - 用語や講座に固有のことを答える前に、必ず search_glossary で用語集を確認する。
 - 回の内容を聞かれたら get_lecture_summary を使う。
+- 確認問題を求められたら make_quiz を使い、返された問題と答えをもとに出題する。
 - 用語集に見つからないことは、推測で断定せず「用語集にはない」と伝える。
 - 回答の最後に、関係する回（第N回）を示す。
 - 宿題の答えそのものは書かず、考え方のヒントで導く。
 """
 
-# モデルは実行時に渡す（テストではAPIを呼ばない TestModel に差し替えるため）
+# Agent は、モデルに使わせる関数（ツール）と、モデルとのやり取りを管理する。
+# モデルは関数の中身を直接実行せず、名前・docstring・型ヒントを見て呼び出しを依頼する。
+# Pydantic AI がその関数を実行し、戻り値をモデルに渡す。
+# モデルは実行時に渡す（テストではAPIを呼ばない TestModel に差し替えるため）。
 agent = Agent(instructions=INSTRUCTIONS)
+
+# tool_plain は Python 関数を「この Agent が使えるツール」として登録する。
+# docstring はツールの説明、型ヒントは引数の名前と型としてモデルに伝わる。
+# そのため、tools.py に関数を作っただけでは使えず、ここにも登録が必要。
 agent.tool_plain(tools.search_glossary)
 agent.tool_plain(tools.get_lecture_summary)
-
-# TODO(第3回 演習): tools.py に make_quiz を作り、ここで登録しよう
+agent.tool_plain(tools.make_quiz)
 
 # 第5回: 使う MCP サーバーの設定ファイル。Claude Desktop や Cursor と同じ "mcpServers" 形式
 MCP_CONFIG = Path(__file__).resolve().parent / "mcp_servers.json"
